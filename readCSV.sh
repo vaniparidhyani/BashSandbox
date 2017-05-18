@@ -6,17 +6,35 @@ server_url=$3
 
 while read PDF
 do
-	pdf_path=`echo $PDF | sed -e 's/$server_url//g' | tr -d '\r'`
+	pdf_path=`echo $PDF | sed -e 's/http:\/\/or1010050158141.corp.adobe.com\:4502//g' | tr -d '\r'`
 	curl -s -u admin:$admin_passwd -X POST -F path=$pdf_path -F cmd="deactivate" "$server_url/bin/replicate.json"
 	sleep 10
 	curl -u admin:$admin_passwd -X DELETE "$server_url$pdf_path"
 	sleep 10
-	status=$(curl -s --head -w %{http_code} $server_url$pdf_path -o /dev/null -u admin:$admin_passwd)
+	status=$(curl -s --head -w %{http_code} http://wcms-acom-prod-uw2.aws122.adobeitc.com$pdf_path -o /dev/null -u admin:$admin_passwd)
 	if [ "$status" == "404" ]
 		then
-		echo "$pdf_path Page deleted successfully"
+		echo "$pdf_path Page deleted successfully from Oregon"
 	else
-		echo "$pdf_path Page not deleted"
+		echo "$pdf_path Page not deleted from Oregon"
 		exit 1
 	fi
+	status=$(curl -s --head -w %{http_code} http://wcms-acom-prod-ew1.aws122.adobeitc.com$pdf_path -o /dev/null -u admin:$admin_passwd)
+        if [ "$status" == "404" ]
+                then
+                echo "$pdf_path Page deleted successfully from Ireland"
+        else
+                echo "$pdf_path Page not deleted from Ireland"
+                exit 1
+        fi
+	status=$(curl -s --head -w %{http_code} http://wcms-acom-prod-an1.aws122.adobeitc.com$pdf_path -o /dev/null -u admin:$admin_passwd)
+        if [ "$status" == "404" ]
+                then
+                echo "$pdf_path Page deleted successfully from Tokyo"
+        else
+                echo "$pdf_path Page not deleted from Tokyo"
+                exit 1
+        fi
+	
+
 done < $csv_file
